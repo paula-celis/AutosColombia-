@@ -1,0 +1,5 @@
+.venv/
+__pycache__/
+*.py[cod]
+autos_colombia.db
+.env

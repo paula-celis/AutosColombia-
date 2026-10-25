@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Autos Colombia</title>
+  <style>
+    body { font-family: Arial, sans-serif; max-width: 760px; margin: 30px auto; padding: 0 16px; color: #17324d; }
+    h1 { color: #12304a; }
+    section { border: 1px solid #ccd6df; border-radius: 10px; padding: 18px; margin: 18px 0; }
+    input, button { box-sizing: border-box; width: 100%; padding: 10px; margin: 6px 0; }
+    button { background: #087e8b; color: white; border: 0; border-radius: 5px; cursor: pointer; }
+    #mensaje, #estado { padding: 12px; background: #eef5f7; border-radius: 6px; }
+  </style>
+</head>
+<body>
+  <h1>Autos Colombia</h1>
+  <p>Control de entrada y salida de vehículos</p>
+
+  <section>
+    <h2>Registrar vehículo</h2>
+    <form id="formVehiculo">
+      <input id="placaNueva" placeholder="Placa, por ejemplo ABC123" required>
+      <button>Registrar vehículo</button>
+    </form>
+  </section>
+
+  <section>
+    <h2>Registrar entrada</h2>
+    <form id="formEntrada">
+      <input id="placaEntrada" placeholder="Placa" required>
+      <input id="celdaEntrada" placeholder="Celda, por ejemplo A-01" required>
+      <input id="operadorEntrada" placeholder="Nombre del operador" required>
+      <button>Registrar entrada</button>
+    </form>
+  </section>
+
+  <section>
+    <h2>Consultar vehículo y registrar salida</h2>
+    <form id="formConsulta">
+      <input id="placaConsulta" placeholder="Placa para consultar" required>
+      <button>Consultar estado</button>
+    </form>
+    <div id="estado">Consulta una placa para ver su estado.</div>
+    <form id="formSalida" hidden>
+      <input id="operadorSalida" placeholder="Nombre del operador de salida" required>
+      <button>Registrar salida</button>
+    </form>
+  </section>
+
+  <p id="mensaje"></p>
+
+  <script>
+    const mensaje = document.getElementById("mensaje");
+    const estado = document.getElementById("estado");
+    const formSalida = document.getElementById("formSalida");
+    let placaActual = "";
+
+    async function solicitar(url, opciones = {}) {
+      const respuesta = await fetch(url, {
+        headers: { "Content-Type": "application/json" },
+        ...opciones
+      });
+      const datos = await respuesta.json();
+      if (!respuesta.ok) throw new Error(datos.detail || "Ocurrió un error");
+      return datos;
+    }
+
+    document.getElementById("formVehiculo").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      try {
+        const datos = await solicitar("/vehiculos", {
+          method: "POST",
+          body: JSON.stringify({ placa: document.getElementById("placaNueva").value })
+        });
+        mensaje.textContent = datos.mensaje + ": " + datos.placa;
+      } catch (error) {
+        mensaje.textContent = error.message;
+      }
+    });
+
+    document.getElementById("formEntrada").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      try {
+        const datos = await solicitar("/entradas", {
+          method: "POST",
+          body: JSON.stringify({
+            placa: document.getElementById("placaEntrada").value,
+            celda: document.getElementById("celdaEntrada").value,
+            operador: document.getElementById("operadorEntrada").value
+          })
+        });
+        mensaje.textContent = datos.mensaje + ": " + datos.placa + " - celda " + datos.celda;
+      } catch (error) {
+        mensaje.textContent = error.message;
+      }
+    });
+
+    document.getElementById("formConsulta").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      placaActual = document.getElementById("placaConsulta").value.trim().toUpperCase();
+      try {
+        const datos = await solicitar("/vehiculos/" + encodeURIComponent(placaActual) + "/estado");
+        estado.textContent = datos.estado === "Dentro"
+          ? `Estado: Dentro | Celda: ${datos.celda} | Entrada: ${datos.fecha_entrada}`
+          : `Estado: ${datos.estado}`;
+        formSalida.hidden = datos.estado !== "Dentro";
+        mensaje.textContent = "";
+      } catch (error) {
+        estado.textContent = error.message;
+        formSalida.hidden = true;
+      }
+    });
+
+    formSalida.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      try {
+        const datos = await solicitar("/salidas/" + encodeURIComponent(placaActual), {
+          method: "POST",
+          body: JSON.stringify({
+            operador: document.getElementById("operadorSalida").value
+          })
+        });
+        mensaje.textContent = datos.mensaje + ": " + datos.placa;
+        formSalida.hidden = true;
+        estado.textContent = "Estado: Fuera";
+      } catch (error) {
+        mensaje.textContent = error.message;
+      }
+    });
+  </script>
+</body>
+</html>
