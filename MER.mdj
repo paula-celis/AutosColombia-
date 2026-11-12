@@ -14833,6 +14833,20 @@
 							"width": 100,
 							"height": 25,
 							"text": "1"
+						},
+						{
+							"_type": "UMLTextView",
+							"_id": "AAAAAAGhca524Jgz7xM=",
+							"_parent": {
+								"$ref": "AAAAAAGhcZsLFJYpdLQ="
+							},
+							"font": "Arial;13;0",
+							"parentStyle": false,
+							"left": 224,
+							"top": 24,
+							"width": 480,
+							"height": 56,
+							"text": "MODELOS ENTIDAD RELACION-AUTOS COLOMBIA"
 						}
 					]
 				},
